@@ -1,20 +1,29 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { CreateMateriaDto } from './dto/create-materia.dto';
-import { UpdateMateriaDto } from './dto/update-materia.dto';
-import { PrismaService } from 'src/prisma/prisma.service';
+import { Injectable, NotFoundException } from "@nestjs/common";
+import { CreateMateriaDto } from "./dto/create-materia.dto";
+import { UpdateMateriaDto } from "./dto/update-materia.dto";
+import { PrismaService } from "src/prisma/prisma.service";
 
 @Injectable()
 export class MateriasService {
   constructor(private prisma: PrismaService) {}
 
-  create(createMateriaDto: CreateMateriaDto) {
-    return 'This action adds a new materia';
+  async create(createMateriaDto: CreateMateriaDto) {
+    const { codigo, estado, nombre, nota } = createMateriaDto;
+    const materia = await this.prisma.materia.create({
+      data: {
+        codigo,
+        estado,
+        nombre,
+        nota,
+      },
+    });
+    return materia;
   }
 
-  findAll() {
-    return this.prisma.materia.findMany({
+  async findAll() {
+    return await this.prisma.materia.findMany({
       orderBy: {
-        codigo: 'asc',
+        codigo: "asc",
       },
     });
   }
@@ -26,7 +35,7 @@ export class MateriasService {
       },
     });
 
-    if (!materia) throw new NotFoundException('Materia no encontrada');
+    if (!materia) throw new NotFoundException("Materia no encontrada");
 
     return materia;
   }
@@ -38,20 +47,45 @@ export class MateriasService {
       },
     });
 
-    if (!materia) throw new NotFoundException('Materia no encontrada');
+    if (!materia) throw new NotFoundException("Materia no encontrada");
 
     return materia;
   }
 
-  update(id: number, updateMateriaDto: UpdateMateriaDto) {
-    return `This action updates a #${id} materia`;
-  }
-
-  remove(id: number) {
-    return this.prisma.materia.delete({
+  async update(id: number, updateMateriaDto: UpdateMateriaDto) {
+    const { nombre, nota, codigo, estado } = updateMateriaDto;
+    const materia = await this.prisma.materia.findFirst({
       where: {
         id: id,
       },
     });
+
+    if (!materia) throw new NotFoundException("Materia no encontrada");
+
+    const materiaActualizada = await this.prisma.materia.update({
+      where: {
+        id: id,
+      },
+      data: {
+        nombre,
+        codigo,
+        estado,
+        nota,
+      },
+    });
+
+    return materiaActualizada;
+  }
+
+  async remove(id: number) {
+    const materia = await this.prisma.materia.delete({
+      where: {
+        id: id,
+      },
+    });
+
+    if (!materia) throw new NotFoundException("Materia no encontrada");
+
+    return materia;
   }
 }
