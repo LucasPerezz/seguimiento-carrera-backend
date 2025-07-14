@@ -14,16 +14,85 @@ datasource db {
 }
 
 model Usuario {
-  id         Int     @id @default(autoincrement())
-  email      String  @unique
+  id         Int       @id @default(autoincrement())
+  email      String    @unique
   contrasena String
-  nombre     String?
+  username   String    @unique
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime? @updatedAt
+
+  rol      Roles            @relation(fields: [rolesId], references: [id])
+  rolesId  Int
+  materias MateriaUsuario[]
 }
 
 model Materia {
-  id     Int    @id @default(autoincrement())
-  codigo Int
-  nombre String
-  nota   Int    @default(0)
-  estado String @default("No aprobado")
+  id        Int       @id @default(autoincrement())
+  codigo    Int
+  nombre    String
+  horas     Int
+  anio      Int
+  createdAt DateTime  @default(now())
+  updatedAt DateTime? @updatedAt
+
+  correlativas  MateriaCorrelativa[] @relation("MateriaCorrelativaMateria")
+  requeridasPor MateriaCorrelativa[] @relation("MateriaCorrelativaCorrelativa")
+  usuario       MateriaUsuario[]     @relation("MateriaUsuario")
+  Plan          Plan?                @relation(fields: [planId], references: [id])
+  planId        Int?
+}
+
+model MateriaCorrelativa {
+  id            Int @id @default(autoincrement())
+  materiaId     Int
+  correlativaId Int
+
+  materia     Materia @relation("MateriaCorrelativaMateria", fields: [materiaId], references: [id])
+  correlativa Materia @relation("MateriaCorrelativaCorrelativa", fields: [correlativaId], references: [id])
+}
+
+model MateriaUsuario {
+  id        Int @id @default(autoincrement())
+  usuarioId Int
+  materiaId Int
+  nota      Int
+  estadoId  Int
+
+  materia Materia       @relation("MateriaUsuario", fields: [materiaId], references: [id])
+  usuario Usuario       @relation(fields: [usuarioId], references: [id])
+  estado  EstadoMateria @relation(fields: [estadoId], references: [id])
+}
+
+model EstadoMateria {
+  id          Int    @id @default(autoincrement())
+  descripcion String
+
+  materiaUsuario MateriaUsuario[]
+}
+
+model Roles {
+  id  Int    @id @default(autoincrement())
+  rol String @default("USER")
+
+  Usuario Usuario[]
+}
+
+model Plan {
+  id        Int       @id @default(autoincrement())
+  nombre    String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime? @updatedAt
+
+  materias  Materia[]
+  Carrera   Carrera?  @relation(fields: [carreraId], references: [id])
+  carreraId Int?
+}
+
+model Carrera {
+  id        Int       @id @default(autoincrement())
+  nombre    String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime? @updatedAt
+
+  planes Plan[]
 }

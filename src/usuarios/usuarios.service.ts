@@ -4,57 +4,83 @@ import {
   Injectable,
   InternalServerErrorException,
   NotFoundException,
-} from "@nestjs/common";
-import { PrismaService } from "src/prisma/prisma.service";
-import { CreateUsuarioDTO } from "./dto/create-usuario.dto";
-import * as bcrypt from "bcrypt";
+} from '@nestjs/common';
+import { PrismaService } from 'src/prisma/prisma.service';
+import { CreateUsuarioDTO } from './dto/create-usuario.dto';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UsuariosService {
   constructor(private prisma: PrismaService) {}
 
   async findById(id: number) {
-    const usuario = await this.prisma.usuario.findFirst({
-      where: {
-        id: id,
-      },
-    });
+    try {
+      const usuario = await this.prisma.usuario.findFirst({
+        where: {
+          id: id,
+        },
+        omit: {
+          contrasena: true,
+        },
+      });
 
-    if (!usuario) throw new NotFoundException("Usuario no encontrado");
+      if (!usuario) throw new NotFoundException('Usuario no encontrado');
 
-    return usuario;
+      return usuario;
+    } catch (error) {
+      console.log(error);
+      throw new InternalServerErrorException('Error en el servidor');
+    }
   }
 
   async create(@Body() usuario: CreateUsuarioDTO) {
     try {
-      const { contrasena, email, username } = usuario;
+      const { contrasena, email, username, rol } = usuario;
 
       const existsEmail = await this.prisma.usuario.findFirst({
-        where: {
-          email: email,
-        },
+        where: { email },
       });
 
       if (existsEmail)
         throw new BadRequestException(
-          "Ya existe un usuario con el mismo email"
+          'Ya existe un usuario con el mismo email',
         );
 
-      // Hacer lo mismo para username
+      const existsUsername = await this.prisma.usuario.findFirst({
+        where: { username },
+      });
+
+      if (existsUsername)
+        throw new BadRequestException(
+          'Ya existe un usuario con el mismo username',
+        );
+
+      const existsRol = await this.prisma.roles.findFirst({
+        where: { id: rol },
+      });
+
+      if (!existsRol)
+        throw new BadRequestException('El rol especificado no existe');
 
       const contrasenaEncode = await bcrypt.hash(contrasena, 10);
 
       const nuevoUsuario = await this.prisma.usuario.create({
         data: {
-          nombre: username,
-          email: email,
+          username,
+          email,
           contrasena: contrasenaEncode,
+          rol: {
+            connect: {
+              id: rol,
+            },
+          },
         },
       });
 
       return nuevoUsuario;
     } catch (error) {
-      throw new InternalServerErrorException("Error en el servidor");
+      console.error(error);
+      throw new InternalServerErrorException('Error en el servidor');
     }
   }
 }

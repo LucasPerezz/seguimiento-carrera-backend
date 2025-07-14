@@ -1,4 +1,12 @@
-import { IsAlphanumeric, IsEmail, IsString, Length } from "class-validator";
+import {
+  IsAlphanumeric,
+  IsEmail,
+  IsEnum,
+  IsNumber,
+  IsString,
+  Length,
+} from 'class-validator';
+import { Role } from 'src/roles/roles.enum';
 
 export class CreateUsuarioDTO {
   @IsEmail()
@@ -10,6 +18,9 @@ export class CreateUsuarioDTO {
 
   @IsString()
   @Length(4, 20)
-  @IsAlphanumeric("ar")
+  @IsAlphanumeric('ar')
   username: string;
+
+  @IsNumber()
+  rol: number;
 }
